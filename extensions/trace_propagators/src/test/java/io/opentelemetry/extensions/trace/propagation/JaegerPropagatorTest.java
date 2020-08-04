@@ -17,10 +17,12 @@
 package io.opentelemetry.extensions.trace.propagation;
 
 import static com.google.common.truth.Truth.assertThat;
+import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.BAGGAGE_HEADER_PREFIX;
 import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.DEPRECATED_PARENT_SPAN;
 import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.PROPAGATION_HEADER;
 import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.PROPAGATION_HEADER_DELIMITER;
 
+import com.google.common.collect.ImmutableMap;
 import io.grpc.Context;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.jaegertracing.internal.propagation.TextMapCodec;
@@ -151,6 +153,52 @@ public class JaegerPropagatorTest {
             PROPAGATION_HEADER,
             generateTraceIdHeaderValue(
                 TRACE_ID_BASE16, SPAN_ID_BASE16, DEPRECATED_PARENT_SPAN, "0"));
+  }
+
+  @Test
+  public void inject_SampledContextWithBaggageItem() {
+    Map<String, String> carrier = new LinkedHashMap<>();
+    Map<String, String> baggageItems = ImmutableMap.of("foo", "bar");
+
+    jaegerPropagator.inject(
+        withSpanContext(
+            SpanContext.create(
+                TRACE_ID,
+                SPAN_ID,
+                TraceFlags.getDefault(),
+                generateTraceStateWithBaggage(baggageItems)),
+            Context.current()),
+        carrier,
+        setter);
+    assertThat(carrier)
+        .containsEntry(
+            PROPAGATION_HEADER,
+            generateTraceIdHeaderValue(
+                TRACE_ID_BASE16, SPAN_ID_BASE16, DEPRECATED_PARENT_SPAN, "0"));
+    verifyBaggageItemsAreSet(carrier, baggageItems);
+  }
+
+  @Test
+  public void inject_SampledContextWithMultipleBaggageItems() {
+    Map<String, String> carrier = new LinkedHashMap<>();
+    Map<String, String> baggageItems = ImmutableMap.of("foo", "bar", "another", "value");
+
+    jaegerPropagator.inject(
+        withSpanContext(
+            SpanContext.create(
+                TRACE_ID,
+                SPAN_ID,
+                TraceFlags.getDefault(),
+                generateTraceStateWithBaggage(baggageItems)),
+            Context.current()),
+        carrier,
+        setter);
+    assertThat(carrier)
+        .containsEntry(
+            PROPAGATION_HEADER,
+            generateTraceIdHeaderValue(
+                TRACE_ID_BASE16, SPAN_ID_BASE16, DEPRECATED_PARENT_SPAN, "0"));
+    verifyBaggageItemsAreSet(carrier, baggageItems);
   }
 
   @Test
@@ -342,5 +390,20 @@ public class JaegerPropagatorTest {
         + parentSpan
         + PROPAGATION_HEADER_DELIMITER
         + sampled;
+  }
+
+  private static TraceState generateTraceStateWithBaggage(Map<String, String> baggageItems) {
+    TraceState.Builder builder = TraceState.builder();
+    baggageItems.forEach(builder::set);
+    return builder.build();
+  }
+
+  private static void verifyBaggageItemsAreSet(
+      Map<String, String> carrier, Map<String, String> baggageItems) {
+    baggageItems.entrySet().stream()
+        .forEach(
+            entry ->
+                assertThat(carrier)
+                    .containsEntry(BAGGAGE_HEADER_PREFIX + entry.getKey(), entry.getValue()));
   }
 }

@@ -46,6 +46,7 @@ public class JaegerPropagator implements HttpTextFormat {
   private static final Logger logger = Logger.getLogger(JaegerPropagator.class.getName());
 
   static final String PROPAGATION_HEADER = "uber-trace-id";
+  static final String BAGGAGE_HEADER_PREFIX = "uberctx-";
   // Parent span has been deprecated but Jaeger propagation protocol requires it
   static final char DEPRECATED_PARENT_SPAN = '0';
   static final char PROPAGATION_HEADER_DELIMITER = ':';
@@ -102,6 +103,15 @@ public class JaegerPropagator implements HttpTextFormat {
     chars[SAMPLED_FLAG_OFFSET - 1] = PROPAGATION_HEADER_DELIMITER;
     chars[SAMPLED_FLAG_OFFSET] = spanContext.getTraceFlags().isSampled() ? IS_SAMPLED : NOT_SAMPLED;
     setter.set(carrier, PROPAGATION_HEADER, new String(chars));
+
+    List<TraceState.Entry> entries = span.getContext().getTraceState().getEntries();
+    if (entries != null) {
+      for (int i = 0; i < entries.size(); i++) {
+        String key = entries.get(i).getKey();
+        String value = entries.get(i).getValue();
+        setter.set(carrier, BAGGAGE_HEADER_PREFIX + key.toLowerCase(), value);
+      }
+    }
   }
 
   @Override
