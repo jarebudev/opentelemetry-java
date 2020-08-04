@@ -16,7 +16,6 @@
 
 package io.opentelemetry.extensions.trace.propagation;
 
-import static com.google.common.truth.Truth.assertThat;
 import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.BAGGAGE_HEADER_PREFIX;
 import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.DEPRECATED_PARENT_SPAN;
 import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.PROPAGATION_HEADER;
