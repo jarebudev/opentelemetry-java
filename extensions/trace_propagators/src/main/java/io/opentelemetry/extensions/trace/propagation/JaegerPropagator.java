@@ -141,7 +141,7 @@ public class JaegerPropagator implements HttpTextFormat {
         // the propagation value
         value = URLDecoder.decode(value, "UTF-8");
       } catch (UnsupportedEncodingException e) {
-        logger.info(
+        logger.fine(
             "Error decoding '"
                 + PROPAGATION_HEADER
                 + "' with value "
@@ -153,7 +153,7 @@ public class JaegerPropagator implements HttpTextFormat {
 
     String[] parts = value.split(String.valueOf(PROPAGATION_HEADER_DELIMITER));
     if (parts.length != 4) {
-      logger.info(
+      logger.fine(
           "Invalid header '"
               + PROPAGATION_HEADER
               + "' with value "
@@ -164,7 +164,7 @@ public class JaegerPropagator implements HttpTextFormat {
 
     String traceId = parts[0];
     if (!isTraceIdValid(traceId)) {
-      logger.info(
+      logger.fine(
           "Invalid TraceId in Jaeger header: '"
               + PROPAGATION_HEADER
               + "' with traceId "
@@ -175,7 +175,7 @@ public class JaegerPropagator implements HttpTextFormat {
 
     String spanId = parts[1];
     if (!isSpanIdValid(spanId)) {
-      logger.info(
+      logger.fine(
           "Invalid SpanId in Jaeger header: '"
               + PROPAGATION_HEADER
               + "'. Returning INVALID span context.");
@@ -184,7 +184,7 @@ public class JaegerPropagator implements HttpTextFormat {
 
     String flags = parts[3];
     if (!isFlagsValid(flags)) {
-      logger.info(
+      logger.fine(
           "Invalid Flags in Jaeger header: '"
               + PROPAGATION_HEADER
               + "'. Returning INVALID span context.");
@@ -206,7 +206,7 @@ public class JaegerPropagator implements HttpTextFormat {
           TraceState.getDefault());
     } catch (Exception e) {
       logger.log(
-          Level.INFO,
+          Level.FINE,
           "Error parsing '" + PROPAGATION_HEADER + "' header. Returning INVALID span context.",
           e);
       return SpanContext.getInvalid();

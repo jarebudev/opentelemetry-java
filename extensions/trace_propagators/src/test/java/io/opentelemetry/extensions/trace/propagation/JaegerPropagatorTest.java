@@ -21,6 +21,7 @@ import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.BAG
 import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.DEPRECATED_PARENT_SPAN;
 import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.PROPAGATION_HEADER;
 import static io.opentelemetry.extensions.trace.propagation.JaegerPropagator.PROPAGATION_HEADER_DELIMITER;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import io.grpc.Context;
@@ -41,15 +42,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link io.opentelemetry.extensions.trace.propagation.JaegerPropagator}. */
-@RunWith(JUnit4.class)
-public class JaegerPropagatorTest {
+class JaegerPropagatorTest {
 
   private static final TraceState TRACE_STATE_DEFAULT = TraceState.builder().build();
   private static final long TRACE_ID_HI = 77L;
@@ -78,8 +74,6 @@ public class JaegerPropagatorTest {
 
   private final JaegerPropagator jaegerPropagator = new JaegerPropagator();
 
-  @Rule public ExpectedException thrown = ExpectedException.none();
-
   private static SpanContext getSpanContext(Context context) {
     return TracingContextUtils.getSpan(context).getContext();
   }
@@ -89,7 +83,7 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void inject_invalidContext() {
+  void inject_invalidContext() {
     Map<String, String> carrier = new LinkedHashMap<>();
     jaegerPropagator.inject(
         withSpanContext(
@@ -105,7 +99,7 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void inject_SampledContext() {
+  void inject_SampledContext() {
     Map<String, String> carrier = new LinkedHashMap<>();
     jaegerPropagator.inject(
         withSpanContext(
@@ -122,7 +116,7 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void inject_SampledContext_nullCarrierUsage() {
+  void inject_SampledContext_nullCarrierUsage() {
     final Map<String, String> carrier = new LinkedHashMap<>();
 
     jaegerPropagator.inject(
@@ -140,7 +134,7 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void inject_NotSampledContext() {
+  void inject_NotSampledContext() {
     Map<String, String> carrier = new LinkedHashMap<>();
     jaegerPropagator.inject(
         withSpanContext(
@@ -156,7 +150,7 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void inject_SampledContextWithBaggageItem() {
+  void inject_SampledContextWithBaggageItem() {
     Map<String, String> carrier = new LinkedHashMap<>();
     Map<String, String> baggageItems = ImmutableMap.of("foo", "bar");
 
@@ -179,7 +173,7 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void inject_SampledContextWithMultipleBaggageItems() {
+  void inject_SampledContextWithMultipleBaggageItems() {
     Map<String, String> carrier = new LinkedHashMap<>();
     Map<String, String> baggageItems = ImmutableMap.of("foo", "bar", "another", "value");
 
@@ -202,43 +196,43 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void extract_Nothing() {
+  void extract_Nothing() {
     // Context remains untouched.
     assertThat(
             jaegerPropagator.extract(
                 Context.current(), Collections.<String, String>emptyMap(), Map::get))
-        .isSameInstanceAs(Context.current());
+        .isSameAs(Context.current());
   }
 
   @Test
-  public void extract_EmptyHeaderValue() {
+  void extract_EmptyHeaderValue() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(PROPAGATION_HEADER, "");
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_NotEnoughParts() {
+  void extract_NotEnoughParts() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(PROPAGATION_HEADER, "aa:bb:cc");
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_TooManyParts() {
+  void extract_TooManyParts() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(PROPAGATION_HEADER, "aa:bb:cc:dd:ee");
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_InvalidTraceId() {
+  void extract_InvalidTraceId() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(
         PROPAGATION_HEADER,
@@ -246,11 +240,11 @@ public class JaegerPropagatorTest {
             "abcdefghijklmnopabcdefghijklmnop", SPAN_ID_BASE16, DEPRECATED_PARENT_SPAN, "0"));
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_InvalidTraceId_Size() {
+  void extract_InvalidTraceId_Size() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(
         PROPAGATION_HEADER,
@@ -258,11 +252,11 @@ public class JaegerPropagatorTest {
             TRACE_ID_BASE16 + "00", SPAN_ID_BASE16, DEPRECATED_PARENT_SPAN, "0"));
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_InvalidSpanId() {
+  void extract_InvalidSpanId() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(
         PROPAGATION_HEADER,
@@ -270,11 +264,11 @@ public class JaegerPropagatorTest {
             TRACE_ID_BASE16, "abcdefghijklmnop", DEPRECATED_PARENT_SPAN, "0"));
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_InvalidSpanId_Size() {
+  void extract_InvalidSpanId_Size() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(
         PROPAGATION_HEADER,
@@ -282,22 +276,22 @@ public class JaegerPropagatorTest {
             TRACE_ID_BASE16, SPAN_ID_BASE16 + "00", DEPRECATED_PARENT_SPAN, "0"));
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_InvalidFlags() {
+  void extract_InvalidFlags() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(
         PROPAGATION_HEADER,
         generateTraceIdHeaderValue(TRACE_ID_BASE16, SPAN_ID_BASE16, DEPRECATED_PARENT_SPAN, ""));
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_InvalidFlags_Size() {
+  void extract_InvalidFlags_Size() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(
         PROPAGATION_HEADER,
@@ -305,11 +299,11 @@ public class JaegerPropagatorTest {
             TRACE_ID_BASE16, SPAN_ID_BASE16, DEPRECATED_PARENT_SPAN, "10220"));
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_InvalidFlags_NonNumeric() {
+  void extract_InvalidFlags_NonNumeric() {
     Map<String, String> invalidHeaders = new LinkedHashMap<>();
     invalidHeaders.put(
         PROPAGATION_HEADER,
@@ -317,11 +311,11 @@ public class JaegerPropagatorTest {
             TRACE_ID_BASE16, SPAN_ID_BASE16, DEPRECATED_PARENT_SPAN, "abcdefr"));
 
     assertThat(getSpanContext(jaegerPropagator.extract(Context.current(), invalidHeaders, getter)))
-        .isSameInstanceAs(SpanContext.getInvalid());
+        .isSameAs(SpanContext.getInvalid());
   }
 
   @Test
-  public void extract_SampledContext() {
+  void extract_SampledContext() {
     Map<String, String> carrier = new LinkedHashMap<>();
     JaegerSpanContext context =
         new JaegerSpanContext(
@@ -335,7 +329,7 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void extract_NotSampledContext() {
+  void extract_NotSampledContext() {
     Map<String, String> carrier = new LinkedHashMap<>();
     JaegerSpanContext context =
         new JaegerSpanContext(
@@ -349,7 +343,7 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void extract_SampledContext_Short_TraceId() {
+  void extract_SampledContext_Short_TraceId() {
     Map<String, String> carrier = new LinkedHashMap<>();
     JaegerSpanContext context =
         new JaegerSpanContext(
@@ -367,7 +361,7 @@ public class JaegerPropagatorTest {
   }
 
   @Test
-  public void extract_UrlEncodedContext() throws UnsupportedEncodingException {
+  void extract_UrlEncodedContext() throws UnsupportedEncodingException {
     Map<String, String> carrier = new LinkedHashMap<>();
     JaegerSpanContext context =
         new JaegerSpanContext(
