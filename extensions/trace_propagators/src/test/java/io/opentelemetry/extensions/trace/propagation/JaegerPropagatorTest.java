@@ -38,6 +38,7 @@ import io.opentelemetry.trace.TracingContextUtils;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -174,7 +175,9 @@ class JaegerPropagatorTest {
   @Test
   void inject_SampledContextWithMultipleBaggageItems() {
     Map<String, String> carrier = new LinkedHashMap<>();
-    Map<String, String> baggageItems = ImmutableMap.of("foo", "bar", "another", "value");
+    Map<String, String> baggageItems = new HashMap<>();
+    baggageItems.put("foo", "bar");
+    baggageItems.put("another", "value");
 
     jaegerPropagator.inject(
         withSpanContext(
